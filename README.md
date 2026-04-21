@@ -1,2 +1,2 @@
 # WeatherStation
-ATmega2560 R3 Wearher Station - low level prog project
+ATmega2560 R3 Weather Station - low level prog project
