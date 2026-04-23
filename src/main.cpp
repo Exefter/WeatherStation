@@ -24,6 +24,10 @@ void customDelay(uint16_t ms) {
     TCCR1B = 0;
 }
 
+// =========================
+// Niski poziom - GPIO DHT11
+// =========================
+
 bool dhtPinRead() {
     return (PIND & (1 << DHT_BIT)) != 0;
 }
@@ -55,20 +59,24 @@ bool waitWhileState(bool state, unsigned long timeoutUs) {
     return true;
 }
 
-int readDHT11(uint8_t *humidity, uint8_t *temperature) {
+// =========================
+// Niski poziom - odczyt DHT11
+// =========================
+
+int readDHT11Raw(uint8_t *humidity, uint8_t *temperature) {
     uint8_t data[5] = {0, 0, 0, 0, 0};
 
-    // 1. Sygnał startu od MCU
+    // MCU wysyla sygnal startu
     dhtPinOutput();
     dhtPinLow();
-    customDelay(20);           
+    customDelay(20);
 
     dhtPinHigh();
-    delayMicroseconds(40);       
+    delayMicroseconds(40);
 
     dhtPinInput();
 
-    // 2. Odpowiedz czujnika
+    // Odpowiedz czujnika
     unsigned long start = micros();
     while (dhtPinRead()) {
         if (micros() - start > 100) {
@@ -84,7 +92,7 @@ int readDHT11(uint8_t *humidity, uint8_t *temperature) {
         return DHT_TIMEOUT_ERROR;
     }
 
-    // 3. Odczyt 40 bitow
+    // Odczyt 40 bitow
     for (int i = 0; i < 40; i++) {
         if (!waitWhileState(false, 100)) {
             return DHT_TIMEOUT_ERROR;
@@ -94,15 +102,15 @@ int readDHT11(uint8_t *humidity, uint8_t *temperature) {
         if (!waitWhileState(true, 100)) {
             return DHT_TIMEOUT_ERROR;
         }
-        unsigned long highTime = micros() - highStart;
 
+        unsigned long highTime = micros() - highStart;
         uint8_t bit = (highTime > 50) ? 1 : 0;
 
         data[i / 8] <<= 1;
         data[i / 8] |= bit;
     }
 
-    // 4. Checksum
+    // Checksum
     uint8_t checksum = data[0] + data[1] + data[2] + data[3];
     if (checksum != data[4]) {
         return DHT_CHECKSUM_ERROR;
@@ -114,17 +122,25 @@ int readDHT11(uint8_t *humidity, uint8_t *temperature) {
     return DHT_OK;
 }
 
-void setup() {
-    Serial.begin(9600);
+// =========================
+// Funkcja do projektu
+// =========================
+
+int getWeatherData(uint8_t *humidity, uint8_t *temperature) {
+    if (humidity == nullptr || temperature == nullptr) {
+        return DHT_TIMEOUT_ERROR;
+    }
+
+    return readDHT11Raw(humidity, temperature);
 }
 
-void loop() {
-    uint8_t humidity = 0;
-    uint8_t temperature = 0;
+// =========================
+// Pomocniczo do debugowania
+// =========================
 
-    int status = readDHT11(&humidity, &temperature);
-
+void printWeatherDataToSerial(int status, uint8_t humidity, uint8_t temperature) {
     Serial.print("Status: ");
+
     if (status == DHT_OK) {
         Serial.println("OK");
 
@@ -144,5 +160,20 @@ void loop() {
     }
 
     Serial.println("------------------------");
-    customDelay(2000);           
+}
+
+void setup() {
+    Serial.begin(9600);
+    Serial.println("Weather station - DHT11");
+}
+
+void loop() {
+    uint8_t humidity = 0;
+    uint8_t temperature = 0;
+
+    int status = getWeatherData(&humidity, &temperature);
+
+    printWeatherDataToSerial(status, humidity, temperature);
+
+    customDelay(2000);
 }
