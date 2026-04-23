@@ -2,7 +2,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifndef F_CPU
 #define F_CPU 16000000UL
+#endif
 
 #define DHT_OK 0
 #define DHT_TIMEOUT_ERROR 1
@@ -92,10 +94,13 @@ void customDelay(uint16_t ms) {
     // CTC, preskaler 64
     TCCR1B |= (1 << WGM12) | (1 << CS11) | (1 << CS10);
 
+    // Wyczyść zalegly znacznik compare match przed rozpoczeciem odliczania
+    TIFR1 = (1 << OCF1A);
+
     for (uint16_t i = 0; i < ms; i++) {
         while (!(TIFR1 & (1 << OCF1A))) {
         }
-        TIFR1 |= (1 << OCF1A);
+        TIFR1 = (1 << OCF1A);
     }
 
     TCCR1B = 0;
@@ -112,7 +117,11 @@ void customDelayUs(uint16_t us) {
 
     TCCR1B |= (1 << CS11); // preskaler 8
 
-    uint16_t ticks = us * 2;
+    uint32_t ticks32 = (uint32_t)us * 2U;
+    if (ticks32 > 0xFFFFU) {
+        ticks32 = 0xFFFFU;
+    }
+    uint16_t ticks = (uint16_t)ticks32;
 
     while (TCNT1 < ticks) {
     }
