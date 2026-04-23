@@ -40,5 +40,5 @@
 # debug information files
 *.dwo
 
-.pio
-.vscode
+.pio/
+.vscode/
