@@ -9,8 +9,20 @@
 #define DHT_CHECKSUM_ERROR 2
 #define DHT_INVALID_ARGUMENT 3
 
-// DHT11 podlaczony do D4 = PD4
-#define DHT_BIT PD4
+// DHT11 podlaczony do D4
+// Uno  (ATmega328P):   D4 = PD4 (PORTD)
+// Mega (ATmega2560):   D4 = PG5 (PORTG)
+#if defined(__AVR_ATmega2560__)
+    #define DHT_DDR  DDRG
+    #define DHT_PORT PORTG
+    #define DHT_PIN  PING
+    #define DHT_BIT  PG5
+#else
+    #define DHT_DDR  DDRD
+    #define DHT_PORT PORTD
+    #define DHT_PIN  PIND
+    #define DHT_BIT  PD4
+#endif
 
 volatile uint8_t gHumidity = 0;
 volatile uint8_t gTemperature = 0;
@@ -112,23 +124,23 @@ void customDelayUs(uint16_t us) {
 // GPIO DHT11
 // =====================================
 bool dhtPinRead(void) {
-    return (PIND & (1 << DHT_BIT)) != 0;
+    return (DHT_PIN & (1 << DHT_BIT)) != 0;
 }
 
 void dhtPinOutput(void) {
-    DDRD |= (1 << DHT_BIT);
+    DHT_DDR |= (1 << DHT_BIT);
 }
 
 void dhtPinInput(void) {
-    DDRD &= ~(1 << DHT_BIT);
+    DHT_DDR &= ~(1 << DHT_BIT);
 }
 
 void dhtPinHigh(void) {
-    PORTD |= (1 << DHT_BIT);
+    DHT_PORT |= (1 << DHT_BIT);
 }
 
 void dhtPinLow(void) {
-    PORTD &= ~(1 << DHT_BIT);
+    DHT_PORT &= ~(1 << DHT_BIT);
 }
 
 // =====================================
