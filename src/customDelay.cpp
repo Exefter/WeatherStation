@@ -17,3 +17,22 @@ void customDelay(uint16_t ms) {
 
     TCCR1B = 0;
 }
+
+void customDelayUs(uint16_t us) {
+    TCCR1A = 0;
+    TCCR1B = 0;
+    TCNT1 = 0;
+
+    TCCR1B |= (1 << CS11);
+
+    uint32_t ticks32 = (uint32_t)us * 2U;
+    if (ticks32 > 0xFFFFU) {
+        ticks32 = 0xFFFFU;
+    }
+    uint16_t ticks = (uint16_t)ticks32;
+
+    while (TCNT1 < ticks) {
+    }
+
+    TCCR1B = 0;
+}
