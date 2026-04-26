@@ -24,6 +24,7 @@
 
 volatile uint8_t gHumidity    = 0;
 volatile uint8_t gTemperature = 0;
+volatile uint8_t gTemperatureDecimal = 0;
 volatile uint8_t gStatus      = DHT_TIMEOUT_ERROR;
 
 static bool dhtPinRead(void) {
@@ -65,8 +66,8 @@ static bool waitWhileState(bool state, uint16_t timeoutTicks, uint16_t *ticks) {
     return true;
 }
 
-int readDHT11Raw(uint8_t *humidity, uint8_t *temperature) {
-    if (humidity == 0 || temperature == 0) {
+int readDHT11Raw(uint8_t *humidity, uint8_t *temperature, uint8_t *temperatureDecimal) {
+    if (humidity == 0 || temperature == 0 || temperatureDecimal == 0) {
         return DHT_INVALID_ARGUMENT;
     }
 
@@ -113,6 +114,7 @@ int readDHT11Raw(uint8_t *humidity, uint8_t *temperature) {
 
     *humidity    = data[0];
     *temperature = data[2];
+    *temperatureDecimal = data[3];
 
     return DHT_OK;
 }
