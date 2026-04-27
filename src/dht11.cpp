@@ -1,5 +1,4 @@
 #include <avr/io.h>
-#include <stdbool.h>
 #include "dht11.h"
 #include "customDelay.h"
 
@@ -7,20 +6,12 @@
 #define F_CPU 16000000UL
 #endif
 
-// DHT11 podlaczony do D4
-// Uno  (ATmega328P):   D4 = PD4 (PORTD)
 // Mega (ATmega2560):   D4 = PG5 (PORTG)
-#if defined(__AVR_ATmega2560__)
     #define DHT_DDR  DDRG
     #define DHT_PORT PORTG
     #define DHT_PIN  PING
     #define DHT_BIT  PG5
-#else
-    #define DHT_DDR  DDRD
-    #define DHT_PORT PORTD
-    #define DHT_PIN  PIND
-    #define DHT_BIT  PD4
-#endif
+
 
 volatile uint8_t gHumidity    = 0;
 volatile uint8_t gTemperature = 0;
