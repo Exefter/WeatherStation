@@ -2,16 +2,43 @@
 #include "customDelay.h"
 #include "lcd.h"
 
-static const uint8_t LCD_RS = (1 << 0);
-static const uint8_t LCD_EN = (1 << 2);
-static const uint8_t LCD_BL = (1 << 3);
-static const uint8_t ROW_OFFSETS[4] = {0x00, 0x40, 0x14, 0x54};
+static const uint8_t I2C_WRITE = 0;
+static const uint8_t I2C_BIT_RATE = 72;
+
+static const uint8_t LCD_COMMAND = 0;
+static const uint8_t LCD_CHARACTER = (1 << 0);
+static const uint8_t LCD_ENABLE = (1 << 2);
+static const uint8_t LCD_BACKLIGHT = (1 << 3);
+
+static const uint8_t LCD_RESET_TO_8_BIT_MODE = 0x30;
+static const uint8_t LCD_CLEAR = 0x01;
+static const uint8_t LCD_HOME_LINE = 0x80;
+static const uint8_t LCD_4_BIT_MODE = 0x20;
+static const uint8_t LCD_2_LINES_5X8_FONT = 0x28;
+static const uint8_t LCD_DISPLAY_OFF = 0x08;
+static const uint8_t LCD_DISPLAY_ON = 0x0C;
+static const uint8_t LCD_ENTRY_LEFT = 0x06;
+static const uint8_t LCD_CUSTOM_CHAR_START = 0x40;
+
+static const uint8_t ROW_START[4] = {0x00, 0x40, 0x14, 0x54};
+static const uint8_t LCD_DEGREE_CHARACTER = 0;
+
+static const uint8_t DEGREE_SYMBOL[8] = {
+    0x06,
+    0x09,
+    0x09,
+    0x06,
+    0x00,
+    0x00,
+    0x00,
+    0x00
+};
 
 static uint8_t lcdAddress = 0x27;
 
 static void i2cInit(void) {
     TWSR = 0;
-    TWBR = 72;
+    TWBR = I2C_BIT_RATE;
     TWCR = (1 << TWEN);
 }
 
@@ -34,31 +61,43 @@ static void i2cWrite(uint8_t data) {
     }
 }
 
-static void pcfWrite(uint8_t data) {
+static void writeToBackpack(uint8_t data) {
     i2cStart();
-    i2cWrite((lcdAddress << 1) | 0);
-    i2cWrite(data | LCD_BL);
+    i2cWrite((lcdAddress << 1) | I2C_WRITE);
+    i2cWrite(data | LCD_BACKLIGHT);
     i2cStop();
 }
 
-static void lcdPulse(uint8_t data) {
-    pcfWrite(data | LCD_EN);
+static void pulseEnable(uint8_t data) {
+    writeToBackpack(data | LCD_ENABLE);
     customDelayUs(1);
-    pcfWrite(data & ~LCD_EN);
+    writeToBackpack(data & ~LCD_ENABLE);
     customDelayUs(50);
 }
 
-static void lcdWrite4(uint8_t data, uint8_t mode) {
-    lcdPulse((data & 0xF0) | mode);
+static void sendNibble(uint8_t nibble, uint8_t mode) {
+    pulseEnable((nibble & 0xF0) | mode);
 }
 
-static void lcdSend(uint8_t data, uint8_t mode) {
-    lcdWrite4(data, mode);
-    lcdWrite4(data << 4, mode);
+static void sendByte(uint8_t data, uint8_t mode) {
+    sendNibble(data, mode);
+    sendNibble(data << 4, mode);
 }
 
 static void lcdCommand(uint8_t command) {
-    lcdSend(command, 0);
+    sendByte(command, LCD_COMMAND);
+}
+
+static void lcdData(uint8_t data) {
+    sendByte(data, LCD_CHARACTER);
+}
+
+static void lcdCreateChar(uint8_t character, const uint8_t rows[8]) {
+    lcdCommand(LCD_CUSTOM_CHAR_START | ((character & 7) << 3));
+
+    for (uint8_t i = 0; i < 8; i++) {
+        lcdData(rows[i]);
+    }
 }
 
 void lcdInit(uint8_t address) {
@@ -66,36 +105,41 @@ void lcdInit(uint8_t address) {
 
     i2cInit();
     customDelay(50);
-    pcfWrite(0);
+    writeToBackpack(0);
     customDelay(10);
 
-    lcdWrite4(0x30, 0);
+    sendNibble(LCD_RESET_TO_8_BIT_MODE, LCD_COMMAND);
     customDelay(5);
-    lcdWrite4(0x30, 0);
+    sendNibble(LCD_RESET_TO_8_BIT_MODE, LCD_COMMAND);
     customDelayUs(150);
-    lcdWrite4(0x30, 0);
+    sendNibble(LCD_RESET_TO_8_BIT_MODE, LCD_COMMAND);
     customDelayUs(150);
-    lcdWrite4(0x20, 0);
+    sendNibble(LCD_4_BIT_MODE, LCD_COMMAND);
     customDelayUs(150);
 
-    lcdCommand(0x28);
-    lcdCommand(0x08);
+    lcdCommand(LCD_2_LINES_5X8_FONT);
+    lcdCommand(LCD_DISPLAY_OFF);
+    lcdCommand(LCD_ENTRY_LEFT);
+    lcdCreateChar(LCD_DEGREE_CHARACTER, DEGREE_SYMBOL);
     lcdClear();
-    lcdCommand(0x06);
-    lcdCommand(0x0C);
+    lcdCommand(LCD_DISPLAY_ON);
 }
 
 void lcdClear(void) {
-    lcdCommand(0x01);
+    lcdCommand(LCD_CLEAR);
     customDelay(2);
 }
 
 void lcdSetCursor(uint8_t col, uint8_t row) {
-    lcdCommand(0x80 | (col + ROW_OFFSETS[row % 4]));
+    lcdCommand(LCD_HOME_LINE | (ROW_START[row % 4] + col));
 }
 
 void lcdWriteChar(char c) {
-    lcdSend((uint8_t)c, LCD_RS);
+    lcdData((uint8_t)c);
+}
+
+void lcdWriteDegree(void) {
+    lcdWriteChar((char)LCD_DEGREE_CHARACTER);
 }
 
 void lcdPrint(const char *text) {
