@@ -20,18 +20,14 @@ static const uint8_t LCD_DISPLAY_ON = 0x0C;
 static const uint8_t LCD_ENTRY_LEFT = 0x06;
 static const uint8_t LCD_CUSTOM_CHAR_START = 0x40;
 
-static const uint8_t ROW_START[4] = {0x00, 0x40, 0x14, 0x54};
+static const uint8_t ROW_START[4] = {
+    0x00, 0x40, 0x14, 0x54
+};
+
 static const uint8_t LCD_DEGREE_CHARACTER = 0;
 
 static const uint8_t DEGREE_SYMBOL[8] = {
-    0x06,
-    0x09,
-    0x09,
-    0x06,
-    0x00,
-    0x00,
-    0x00,
-    0x00
+    0x06, 0x09, 0x09, 0x06, 0x00, 0x00, 0x00, 0x00
 };
 
 static uint8_t lcdAddress = 0x27;
