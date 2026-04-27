@@ -10,8 +10,9 @@
 
 extern volatile uint8_t gHumidity;
 extern volatile uint8_t gTemperature;
+extern volatile uint8_t gTemperatureDecimal;
 extern volatile uint8_t gStatus;
 
-int readDHT11Raw(uint8_t *humidity, uint8_t *temperature);
+int readDHT11Raw(uint8_t *humidity, uint8_t *temperature, uint8_t *temperatureDecimal);
 
 #endif
