@@ -2,15 +2,11 @@
 #include "dht11.h"
 #include "customDelay.h"
 
-#ifndef F_CPU
-#define F_CPU 16000000UL
-#endif
-
 // Mega (ATmega2560):   D4 = PG5 (PORTG)
-    #define DHT_DDR  DDRG
-    #define DHT_PORT PORTG
-    #define DHT_PIN  PING
-    #define DHT_BIT  PG5
+#define DHT_DDR  DDRG
+#define DHT_PORT PORTG
+#define DHT_PIN  PING
+#define DHT_BIT  PG5
 
 
 volatile uint8_t gHumidity    = 0;

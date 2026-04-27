@@ -17,7 +17,7 @@ static void lcdPrintNumber(uint8_t value) {
     }
 
     while (i > 0) {
-        lcdWriteChar(buffer[--i]);
+        lcdWriteChar(buffer[--i]); 
     }
 }
 
