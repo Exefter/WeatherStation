@@ -1,34 +1,9 @@
 #include <avr/io.h>
 #include "customDelay.h"
 #include "lcd.h"
-
-//I2C 
-#define I2C_BIT_RATE  72  // 16 MHz / (16 + 2*72*1) ≈ 100 kHz - standardowa prędkość I2C
+#include "i2c.h"
 
 static uint8_t lcdAddress = 0x27;
-
-// Inicjalizacja I2C, wysyłanie start/stop, zapisywanie bajtów
-static void i2cInit(void) {
-    TWSR = 0;
-    TWBR = I2C_BIT_RATE; // ustawienie szybkości I2C
-    TWCR = (1 << TWEN); // włącz I2C
-}
-
-static void i2cStart(void) {
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN); // wysłanie sygnału start
-    while (!(TWCR & (1 << TWINT))); // czekaj na zakończenie
-}
-
-static void i2cStop(void) {
-    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN); // wysłanie sygnału stop
-    while (TWCR & (1 << TWSTO)); // czekaj aż stop zostanie wysłany
-}
-
-static void i2cWrite(uint8_t data) {
-    TWDR = data; // załaduj bajt do rejestru danych
-    TWCR = (1 << TWINT) | (1 << TWEN); // rozpocznij transmisję
-    while (!(TWCR & (1 << TWINT))); // czekaj na zakończenie
-}
 
 // Piny backpacka PCF8574
 

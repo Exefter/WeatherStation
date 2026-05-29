@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "dht11.h"
 #include "lcd.h"
+#include "clock.h"
 
 static void lcdPrintNumber(uint8_t value) {
     char buffer[4];
@@ -62,3 +63,22 @@ void printWeatherDataToLcd(
         lcdPrint(statusText(status));
     }
 }
+
+static void lcdPrint2Digits(uint8_t value) {
+    lcdWriteChar('0' + (value / 10));
+    lcdWriteChar('0' + (value % 10));
+}
+
+void printTimeToLcd(const RTC_Time *time) {
+    lcdClear();
+    lcdSetCursor(0, 0);
+    
+    lcdPrint2Digits(time->hours);
+    lcdWriteChar(':');
+    
+    lcdPrint2Digits(time->minutes);
+    lcdWriteChar(':');
+    
+    lcdPrint2Digits(time->seconds);
+}
+
