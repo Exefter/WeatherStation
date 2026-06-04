@@ -3,10 +3,10 @@
 #include "customDelay.h"
 
 // Mega (ATmega2560):   D4 = PG5 (PORTG)
-#define DHT_DDR  DDRG
-#define DHT_PORT PORTG
-#define DHT_PIN  PING
-#define DHT_BIT  PG5
+#define DHT_DDR  DDRD
+#define DHT_PORT PORTD
+#define DHT_PIN  PIND
+#define DHT_BIT  PD4
 
 
 volatile uint8_t gHumidity    = 0;

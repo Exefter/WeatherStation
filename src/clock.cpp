@@ -27,3 +27,4 @@ void rtcReadTime(RTC_Time *time) {
     (*time).minutes = bcdToDec(rawMinutes);
     (*time).hours   = bcdToDec(rawHours & 0x3F);
 }
+
