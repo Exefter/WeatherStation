@@ -34,14 +34,14 @@ static void irTimerInit(void) {
 // INT0 na dowolne zbocze
 // -------------------------------------
 static void irInterruptInit(void) {
-    DDRD &= ~(1 << PD2);    // D2 jako wejscie
-    PORTD |= (1 << PD2);    // pull-up
+    DDRE &= ~(1 << PE4);    // D2 na Mega = PE4 = wejscie
+    PORTE |= (1 << PE4);    // pull-up
 
-    EICRA |= (1 << ISC00);  // any logical change on INT0
-    EICRA &= ~(1 << ISC01);
+    EICRB |= (1 << ISC40);  // any logical change on INT4
+    EICRB &= ~(1 << ISC41);
 
-    EIFR |= (1 << INTF0);   // wyczysc flage
-    EIMSK |= (1 << INT0);   // wlacz INT0
+    EIFR |= (1 << INTF4);   // wyczysc flage
+    EIMSK |= (1 << INT4);   // wlacz INT4
 }
 
 static uint16_t ticksToUs(uint16_t ticks) {
@@ -80,14 +80,14 @@ ISR(TIMER2_OVF_vect) {
     irOverflowCount++;
 }
 
-ISR(INT0_vect) {
+ISR(INT4_vect) {
     uint16_t now = ((uint16_t)irOverflowCount << 8) | TCNT2;
     uint16_t deltaTicks = now - irLastTime;
     irLastTime = now;
 
     uint16_t deltaUs = ticksToUs(deltaTicks);
 
-    uint8_t pinState = (PIND & (1 << PD2)) ? 1 : 0;
+    uint8_t pinState = (PINE & (1 << PE4)) ? 1 : 0;
 
     // Automat NEC:
     // 0 - czekamy na leader LOW ~9 ms
