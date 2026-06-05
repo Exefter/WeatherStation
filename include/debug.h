@@ -5,7 +5,7 @@
 #include "clock.h"
 
 void printWeatherDataToLcd(
-    int status,
+    int8_t status,
     uint8_t humidity,
     uint8_t temperature,
     uint8_t temperatureDecimal);

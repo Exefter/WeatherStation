@@ -7,33 +7,42 @@
 #include "lcd.h"
 #include "ir.h"
 
-#define SCREEN_WEATHER 0
-#define SCREEN_CLOCK   1
+#define SCREEN_WEATHER 0U
+#define SCREEN_CLOCK   1U
 
+/*!
+ * @brief    Główny punkt wejściowy programu stacji pogodowej (funkcja main).
+ * @returns  Kod zakończenia programu (int), domyślnie 0.
+ * @side effects:
+ * - Konfiguruje globalne peryferia sprzętowe: LCD oraz dekoder podczerwieni IR.
+ * - Odblokowuje globalną flagę obsługi przerwań mikrokontrolera (instrukcja sei).
+ * - Zarządza czasem odpytywania czujników (DHT11, RTC) oraz odświeżaniem ekranu.
+ * - Blokuje procesor w nieskończonej pętli przetwarzania zadań.
+ */
 int main(void) {
-    uint8_t humidity = 0;
-    uint8_t temperature = 0;
-    uint8_t temperatureDecimal = 0;
+    uint8_t humidity = 0U;
+    uint8_t temperature = 0U;
+    uint8_t temperatureDecimal = 0U;
     RTC_Time time;
     uint8_t currentScreen = SCREEN_WEATHER;
 
-    uint32_t irCode = 0;
+    uint32_t irCode = 0UL;
 
-    uint16_t weatherCounter = 0;
-    uint16_t clockCounter = 0;
-    uint16_t screenRefreshCounter = 0;
+    uint16_t weatherCounter = 0U;
+    uint16_t clockCounter = 0U;
+    uint16_t screenRefreshCounter = 0U;
+    bool isRunning = true;
 
-    lcdInit(0x27);
+    lcdInit(0x27U);
     irInit();
     sei();
 
-    lcdSetCursor(0, 0);
+    lcdSetCursor(0U, 0U);
     lcdPrint("Weather station");
-    lcdSetCursor(0, 1);
+    lcdSetCursor(0U, 1U);
     lcdPrint("DHT11 + RTC + IR");
-    customDelay(1500);
+    customDelay(1500U);
 
-    // pierwszy odczyt
     gStatus = readDHT11Raw(&humidity, &temperature, &temperatureDecimal);
     if (gStatus == DHT_OK) {
         gHumidity = humidity;
@@ -43,8 +52,8 @@ int main(void) {
 
     rtcReadTime(&time);
 
-    while (1) {
-        if (irHasCode()) {
+    while (isRunning) {
+        if (irHasCode() != 0U) {
             irCode = irGetCode();
 
             if (irCode == IR_CODE_1) {
@@ -52,13 +61,19 @@ int main(void) {
             } else if (irCode == IR_CODE_2) {
                 currentScreen = SCREEN_CLOCK;
             } else if (irCode == IR_CODE_OK) {
-                currentScreen = (currentScreen == SCREEN_WEATHER) ? SCREEN_CLOCK : SCREEN_WEATHER;
+                if (currentScreen == SCREEN_WEATHER) {
+                    currentScreen = SCREEN_CLOCK;
+                } else {
+                    currentScreen = SCREEN_WEATHER;
+                }
+            }
+            else {
+
             }
         }
 
-        // DHT co 1000 ms
-        if (weatherCounter >= 100) {
-            weatherCounter = 0;
+        if (weatherCounter >= 100U) {
+            weatherCounter = 0U;
 
             gStatus = readDHT11Raw(&humidity, &temperature, &temperatureDecimal);
             if (gStatus == DHT_OK) {
@@ -68,15 +83,13 @@ int main(void) {
             }
         }
 
-        // RTC co 200 ms
-        if (clockCounter >= 20) {
-            clockCounter = 0;
+        if (clockCounter >= 20U) {
+            clockCounter = 0U;
             rtcReadTime(&time);
         }
 
-        // ekran co 200 ms
-        if (screenRefreshCounter >= 20) {
-            screenRefreshCounter = 0;
+        if (screenRefreshCounter >= 20U) {
+            screenRefreshCounter = 0U;
 
             if (currentScreen == SCREEN_WEATHER) {
                 printWeatherDataToLcd(gStatus, humidity, temperature, temperatureDecimal);
@@ -85,7 +98,7 @@ int main(void) {
             }
         }
 
-        customDelay(10);
+        customDelay(10U);
         weatherCounter++;
         clockCounter++;
         screenRefreshCounter++;

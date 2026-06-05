@@ -1,7 +1,7 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
-#include <avr/io.h>
+#include <stdint.h>
 
 typedef struct {
     uint8_t hours;
@@ -10,6 +10,5 @@ typedef struct {
 } RTC_Time;
 
 void rtcReadTime(RTC_Time *time);
-
 
 #endif
