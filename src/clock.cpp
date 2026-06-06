@@ -6,7 +6,7 @@
 #define DS3231_ADDRESS_WRITE 0xD0U // Adres 0x68 przesunięty w lewo o 1 bit (bit zapisu = 0)
 #define DS3231_ADDRESS_READ  0xD1U // Adres 0x68 przesunięty w lewo o 1 bit (bit odczytu = 1)
 
-/*!
+/*! 
  * @brief    Konwertuje liczbę zapisaną w formacie BCD (Binary-Coded Decimal) na format dziesiętny.
  * @param    val
  * Wartość wejściowa w formacie BCD (uint8_t).
