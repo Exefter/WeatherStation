@@ -1,6 +1,7 @@
 #ifndef CUSTOMDELAY_H
 #define CUSTOMDELAY_H
 
+#include <stdint.h>
 #include <avr/io.h>
 
 void customDelay(uint16_t ms);
