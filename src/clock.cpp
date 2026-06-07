@@ -27,24 +27,35 @@ static uint8_t bcdToDec(uint8_t val) {
  * - Blokuje wykonanie programu (pętle busy-wait wewnątrz funkcji i2c).
  * - Nadpisuje pola struktury wskazywanej przez parametr 'time'.
  */
-void rtcReadTime(RTC_Time *time) {
+uint8_t rtcReadTime(RTC_Time *time) {
+    uint8_t status = RTC_ERROR;
     if (time != NULL) {
         i2cStart();
-        i2cWrite(DS3231_ADDRESS_WRITE);
-        i2cWrite(0x00U); 
-        
-        i2cStart();
-        i2cWrite(DS3231_ADDRESS_READ);
-        
-        uint8_t rawSeconds = i2cRead((uint8_t)1U);
-        uint8_t rawMinutes = i2cRead((uint8_t)1U);
-        uint8_t rawHours   = i2cRead((uint8_t)0U);
-        
-        i2cStop();
-        
-        time->seconds = bcdToDec(rawSeconds);
-        time->minutes = bcdToDec(rawMinutes);
-        time->hours   = bcdToDec((uint8_t)(rawHours & 0x3FU));
+        status = i2cWrite(DS3231_ADDRESS_WRITE);
+        if (status == RTC_OK) {
+            i2cWrite(0x00U); 
+            
+            i2cStart();
+            i2cWrite(DS3231_ADDRESS_READ);
+            
+            uint8_t rawSeconds = i2cRead((uint8_t)1U);
+            uint8_t rawMinutes = i2cRead((uint8_t)1U);
+            uint8_t rawHours   = i2cRead((uint8_t)1U);
+            i2cRead((uint8_t)1U);
+            uint8_t rawDay = i2cRead((uint8_t)1U);
+            uint8_t rawMonth = i2cRead((uint8_t)1U);
+            uint8_t rawYear = i2cRead((uint8_t)0U);
+            
+            i2cStop();
+            
+            time->seconds = bcdToDec(rawSeconds);
+            time->minutes = bcdToDec(rawMinutes);
+            time->hours   = bcdToDec((uint8_t)(rawHours & 0x3FU));
+            time->day     = bcdToDec(rawDay); 
+            time->month   = bcdToDec((uint8_t)(rawMonth & 0x1FU));
+            time->year   = bcdToDec(rawYear);
+        }
     }
+    return status;
 }
 

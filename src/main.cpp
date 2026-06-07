@@ -24,6 +24,7 @@ int main(void) {
     uint8_t temperature = 0U;
     uint8_t temperatureDecimal = 0U;
     RTC_Time time;
+    uint8_t tStatus;
     uint8_t currentScreen = SCREEN_WEATHER;
 
     uint32_t irCode = 0UL;
@@ -50,8 +51,9 @@ int main(void) {
         gTemperatureDecimal = temperatureDecimal;
     }
 
-    rtcReadTime(&time);
-
+    tStatus = rtcReadTime(&time);
+    
+    printWeatherDataToLcd(gStatus, humidity, temperature, temperatureDecimal);
     while (isRunning) {
         if (irHasCode() != 0U) {
             irCode = irGetCode();
@@ -85,7 +87,7 @@ int main(void) {
 
         if (clockCounter >= 20U) {
             clockCounter = 0U;
-            rtcReadTime(&time);
+            tStatus = rtcReadTime(&time);
         }
 
         if (screenRefreshCounter >= 20U) {
@@ -94,7 +96,7 @@ int main(void) {
             if (currentScreen == SCREEN_WEATHER) {
                 printWeatherDataToLcd(gStatus, humidity, temperature, temperatureDecimal);
             } else {
-                printTimeToLcd(&time);
+                printTimeToLcd(tStatus, &time);
             }
         }
 

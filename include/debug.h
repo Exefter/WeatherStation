@@ -10,6 +10,6 @@ void printWeatherDataToLcd(
     uint8_t temperature,
     uint8_t temperatureDecimal);
 
-void printTimeToLcd(const RTC_Time *time);
+void printTimeToLcd(uint8_t status, const RTC_Time *time);
 
 #endif

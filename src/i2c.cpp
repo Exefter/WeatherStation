@@ -53,13 +53,25 @@ void i2cStop(void) {
  * - Modyfikuje rejestr TWCR w celu rozpoczęcia transmisji (czyszczenie flagi TWINT).
  * - Blokuje wykonanie programu w pętli busy-wait do momentu sprzętowego ustawienia flagi TWINT (koniec nadawania i odebranie bitu ACK/NACK).
  */
-void i2cWrite(uint8_t data) {
+uint8_t i2cWrite(uint8_t data) {
+    uint8_t status = I2C_OK;
+    uint16_t timeout = (uint16_t)20000U;
     TWDR = data;
     TWCR =  (uint8_t)((1U << TWINT) | (1U << TWEN));
 
     while ((TWCR & (uint8_t)(1U << TWINT)) == 0U) {
-        /* Oczekiwanie na sprzętowe ustawienie flagi TWINT */
+        timeout--;
+        if(timeout == (uint16_t)0U) {
+            status = I2C_ERROR;
+
+            TWCR = (uint8_t)(0U); 
+            TWCR = (uint8_t)(1U << TWEN);
+            
+            break;
+        }
     }
+
+    return status;
 }
 
 /*!

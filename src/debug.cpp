@@ -125,10 +125,18 @@ static void lcdPrint2Digits(uint8_t value) {
  * @side effects:
  * - Wywołuje czyszczenie ekranu oraz modyfikuje pozycję kursora na wyświetlaczu.
  */
-void printTimeToLcd(const RTC_Time *time) {
-    if (time != NULL) {
+void printTimeToLcd(uint8_t status, const RTC_Time *time) {
+    if (time != NULL && status == RTC_OK) {
         lcdClear();
         lcdSetCursor(0U, 0U);
+
+        lcdPrint2Digits(time->day);
+        lcdWriteChar('.');
+        lcdPrint2Digits(time->month);
+        lcdWriteChar('.');
+        lcdPrint2Digits(time->year);
+
+        lcdSetCursor(0U, 1U);
         
         lcdPrint2Digits(time->hours);
         lcdWriteChar(':');
@@ -137,6 +145,10 @@ void printTimeToLcd(const RTC_Time *time) {
         lcdWriteChar(':');
         
         lcdPrint2Digits(time->seconds);
+    } else {
+        lcdClear();
+        lcdSetCursor(0U, 0U);
+        lcdPrint("RTC error");
     }
 }
 
