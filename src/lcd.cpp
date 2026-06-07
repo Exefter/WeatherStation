@@ -2,8 +2,7 @@
 #include "customDelay.h"
 #include "lcd.h"
 #include "i2c.h"
-
-static uint8_t lcdAddress = 0x27;
+#include <stddef.h>
 
 // Piny backpacka PCF8574
 
@@ -12,118 +11,216 @@ static uint8_t lcdAddress = 0x27;
 //  Bit 3 (0x08) = BL - podświetlenie
 //  Bity 4-7 = D4-D7 - linie danych LCD (tryb 4-bitowy - nibble)
 
-#define RS  0x01
-#define EN  0x04
-#define BL  0x08
+#define RS  0x01U
+#define EN  0x04U
+#define BL  0x08U
+#define DEGREE_SLOT  0U
 
-
-static void backpackWrite(uint8_t data) {
-    i2cStart(); // rozpocznij transmisję
-    i2cWrite((lcdAddress << 1)); // rozpocznij transmisję do backpacka - wyślij adres z bitem zapisu (LSB=0)
-    i2cWrite(data | BL); // wyślij dane z włączonym podświetleniem
-    i2cStop(); // zakończ transmisję
-}
-
-// Puls EN — LCD zapamiętuje dane gdy sygnał ENABLE przechodzi z 0 do 1, a następnie z powrotem do 0.
-static void pulseEnable(uint8_t data) {
-    backpackWrite(data | EN); // EN=1
-    customDelayUs(1); // krótki impuls
-    backpackWrite(data & ~EN); // EN=0
-    customDelayUs(50); // czekaj na przetworzenie danych przez LCD (HD44780 potrzebuje do 37 us)
-}
-
-// Wysyła nibble (4 bity) do LCD. Mode=0 dla komendy, RS dla danych.
-static void sendNibble(uint8_t data, uint8_t mode) {
-    pulseEnable((data & 0xF0) | mode); // wysyłamy górny nibble (D7-D4) + informacja o trybie (komenda/dane)
-}
-
-// Wysyła bajt jako dwa nibblee (górny, potem dolny)
-static void sendByte(uint8_t data, uint8_t mode) {
-    sendNibble(data, mode); // najpierw górny nibble
-    sendNibble(data << 4, mode); // potem dolny nibble (przesunięty na pozycję górnego)
-}
-
-static void lcdCommand(uint8_t cmd) { 
-    sendByte(cmd, 0); // RS=0: komenda 
-} 
-
-static void lcdData(uint8_t data) { 
-    sendByte(data, RS); // RS=1: znak
-} 
-
-// HD44780 obsługuje 8 znaków 5×8 w CGRAM (sloty 0–7).
-
-#define DEGREE_SLOT  0 // slot w CGRAM dla symbolu stopnia
+static uint8_t lcdAddress = 0x27U;
 
 static const uint8_t DEGREE_BITMAP[8] = {
-    0x06, 0x09, 0x09, 0x06, 
-    0x00, 0x00, 0x00, 0x00
+    0x06U, 0x09U, 0x09U, 0x06U, 
+    0x00U, 0x00U, 0x00U, 0x00U
 };
 
+static const uint8_t ROW_OFFSET[4] = { 
+    0x00U, 0x40U, 0x14U, 0x54U 
+};
+
+/*!
+ * @brief    Zapisuje pojedynczy bajt danych bezpośrednio do ekspandera.
+ * @param    data  
+ * Bajt danych do wysłania na porty IO ekspandera.
+ * @side effects:
+ * - Inicjuje i kończy sesję transmisji na magistrali I2C.
+ * - Wymusza logiczne włączenie podświetlenia ekranu poprzez operację alternatywy z maską BL.
+ */
+static void backpackWrite(uint8_t data) {
+    i2cStart();
+    i2cWrite((uint8_t)(lcdAddress << 1U));
+    i2cWrite(((uint8_t)data | (uint8_t)BL));
+    i2cStop();
+}
+
+/*!
+ * @brief    Generuje wymagany impuls strobujący na linii ENABLE (EN) sterownika HD44780.
+ * @param    data  
+ * Bajt danych, z którym ma zostać połączony impuls sterujący.
+ * @side effects:
+ * - Dwukrotnie wywołuje funkcję backpackWrite, zmieniając stan pinu EN ekspandera.
+ * - Blokuje procesor mikrokontrolera na łączny czas około 51 mikrosekund (pętle busy-wait).
+ */
+static void pulseEnable(uint8_t data) {
+    backpackWrite(((uint8_t)data | (uint8_t)EN));
+    customDelayUs(1U);
+    backpackWrite((uint8_t)((uint8_t)data & (uint8_t)(~((uint8_t)EN))));
+    customDelayUs(50U);
+}
+
+/*!
+ * @brief    Wysyła starszą połowę bajtu (nibble) wraz z flagą wyboru rejestru RS.
+ * @param    data  
+ * Bajt danych, z którego zostanie wycięte 4 starsze bity (D7-D4).
+ * @param    mode  
+ * Tryb pracy kontrolera: wartość RS (dane) lub 0U (instrukcja).
+ * @side effects:
+ * - Wywołuje procedurę pulseEnable, co skutkuje wysłaniem danych przez magistralę I2C.
+ */
+static void sendNibble(uint8_t data, uint8_t mode) {
+    pulseEnable((uint8_t)(((uint8_t)data & (uint8_t)0xF0U) | (uint8_t)mode));
+}
+
+/*!
+ * @brief    Dzieli bajt danych na dwie części 4-bitowe i wysyła je sekwencyjnie do wyświetlacza.
+ * @param    data  
+ * Pełny bajt danych lub komendy przeznaczony dla sterownika LCD.
+ * @param    mode 
+ * Tryb pracy kontrolera: wartość RS (dane) lub 0U (instrukcja).
+ * @side effects:
+ * - Generuje serię dwóch pełnych cykli strobujących na magistrali komunikacyjnej.
+ */
+static void sendByte(uint8_t data, uint8_t mode) {
+    sendNibble(data, mode);
+    sendNibble((uint8_t)(data << 4U), mode);
+}
+
+/*!
+ * @brief    Wysyła komendę sterującą do rejestru instrukcji wyświetlacza LCD.
+ * @param    cmd  
+ * Bajt zawierający kod rozkazu dla sterownika HD44780.
+ * @side effects:
+ * - Modyfikuje rejestr wewnętrzny oraz stan pracy kontrolera wyświetlacza (RS = 0U).
+ */
+static void lcdCommand(uint8_t cmd) { 
+    sendByte(cmd, 0U);
+} 
+
+/*!
+ * @brief    Wysyła pojedynczy znak danych do pamięci DDRAM/CGRAM wyświetlacza LCD.
+ * @param    data  
+ * Kod ASCII znaku lub adres bitmapy do wyświetlenia.
+ * @side effects:
+ * - Zapisuje bajt danych do aktualnej komórki pamięci RAM sterownika LCD (RS = RS).
+ */
+static void lcdData(uint8_t data) { 
+    sendByte(data, (uint8_t)RS);
+} 
+
+/*!
+ * @brief    Tworzy i zapisuje niestandardowy znak użytkownika w pamięci generowania znaków CGRAM.
+ * @param    slot    
+ * Numer indeksu komórki pamięci CGRAM (zakres 0 do 7).
+ * @param    bitmap  
+ * Tablica 8 bajtów definiująca wygląd kolejnych wierszy znaku graficznego.
+ * @side effects:
+ * - Przestawia tymczasowo licznik adresowy wyświetlacza na obszar pamięci CGRAM.
+ * - Nadpisuje wybraną lokację generatora znaków.
+ */
 static void createChar(uint8_t slot, const uint8_t bitmap[8]) {
-    lcdCommand(0x40 | ((slot & 7) << 3)); // ustaw adres CGRAM na początek slotu
-    for (uint8_t i = 0; i < 8; i++) { 
-        lcdData(bitmap[i]); // wczytaj bitmapę do CGRAM
+    uint8_t shiftedSlot = (uint8_t)((uint8_t)(slot & 7U) << 3U);
+    lcdCommand((uint8_t)(0x40U | shiftedSlot));
+    for (uint8_t i = 0U; i < 8U; i++) { 
+        lcdData(bitmap[i]);
     }
 }
 
-// Układ DDRAM wyświetlacza 20×4:
-//   Wiersz 0: 0x00,  
-//   Wiersz 1: 0x40,  
-//   Wiersz 2: 0x14,  
-//   Wiersz 3: 0x54
-
-static const uint8_t ROW_OFFSET[4] = { 
-    0x00, 0x40, 0x14, 0x54 
-};
-
-//API
+/*!
+ * @brief    Przeprowadza pełną procedurę inicjalizacji sprzętowej wyświetlacza LCD w trybie 4-bitowym.
+ * @param    address  
+ * Adres sprzętowy I2C ekspandera (np. 0x27).
+ * @side effects:
+ * - Inicjalizuje peryferium i2cInit oraz zapisuje globalny adres urządzenia w 'lcdAddress'.
+ * - Generuje serie wielokrotnych, blokujących opóźnień programowych o łącznej długości powyżej 60 milisekund.
+ * - Konfiguruje pamięć CGRAM, wgrywając definicję znaku stopnia.
+ * - Czyści zawartość ekranu i aktywuje wyświetlacz w trybie ukrytego kursora.
+ */
 void lcdInit(uint8_t address) {
-    lcdAddress = address; // zapamiętaj adres I2C LCD
+    lcdAddress = address;
 
     i2cInit();
-    customDelay(50); // czekaj na zasilanie LCD
-    backpackWrite(0); // wszystkie piny backpacka w stan niski
-    customDelay(10); // czekaj na stabilizację backpacka 
+    customDelay(50U);
+    backpackWrite(0U);
+    customDelay(10U);
 
-    // Sekwencja inicjalizacji HD44780 - zgodnie z dokumentacją, aby przejść do trybu 4-bitowego, należy wysłać 0x30 trzy razy, a następnie 0x20.:
-    sendNibble(0x30, 0); 
-    customDelay(5);
-    sendNibble(0x30, 0);  
-    customDelayUs(150);
-    sendNibble(0x30, 0);  
-    customDelayUs(150);
-    sendNibble(0x20, 0);  
-    customDelayUs(150);  // tryb 4-bitowy
+    // Sekwencja inicjalizacji HD44780:
+    sendNibble(0x30U, 0U); 
+    customDelay(5U);
+    sendNibble(0x30U, 0U);  
+    customDelayUs(150U);
+    sendNibble(0x30U, 0U);  
+    customDelayUs(150U);
+    sendNibble(0x20U, 0U);  
+    customDelayUs(150U);
 
-    lcdCommand(0x28);  // 2 linie, font 5x8
-    lcdCommand(0x08);  // wyłącz wyświetlacz
-    lcdCommand(0x06);  // kursor przesuwa się w prawo
+    lcdCommand(0x28U);  // 2 linie, font 5x8
+    lcdCommand(0x08U);  // wyłącz wyświetlacz
+    lcdCommand(0x06U);  // kursor przesuwa się w prawo
 
     createChar(DEGREE_SLOT, DEGREE_BITMAP); // zdefiniuj symbol stopnia w CGRAM
 
     lcdClear(); 
-    lcdCommand(0x0C);  // włącz wyświetlacz, bez kursora
+    lcdCommand(0x0CU);  // włącz wyświetlacz, bez kursora
 }
 
+/*!
+ * @brief    Czyści zawartość pamięci DDRAM wyświetlacza i przywraca kursor na pozycję początkową (0,0).
+ * @side effects:
+ * - Wysyła komendę czyszczenia ekranu, co usuwa wszystkie wyświetlane znaki.
+ * - Blokuje działanie programu na około 2 milisekundy (wymóg czasowy sterownika HD44780).
+ */
 void lcdClear(void) {
-    lcdCommand(0x01); // komenda czyszczenia ekranu
-    customDelay(2);
+    lcdCommand(0x01U); // komenda czyszczenia ekranu
+    customDelay(2U);
 }
 
+/*!
+ * @brief    Ustawia kursor tekstowy wyświetlacza na zadanych współrzędnych kolumny i wiersza.
+ * @param    col  
+ * Numer kolumny (indeksowany od 0U).
+ * @param    row  
+ * Numer wiersza (indeksowany od 0U do 3U).
+ * @side effects:
+ * - Wyznacza adres sprzętowy DDRAM na podstawie tablicy ROW_OFFSET z zabezpieczeniem modulo przed przekroczeniem indeksu.
+ */
 void lcdSetCursor(uint8_t col, uint8_t row) {
-    lcdCommand(0x80 | (ROW_OFFSET[row % 4] + col)); // ustaw adres DDRAM na podstawie kolumny i wiersza
+    uint8_t offset = (uint8_t)(ROW_OFFSET[row % 4U] + col);
+    lcdCommand((uint8_t)(0x80U | offset));
 }
 
+/*!
+ * @brief    Wyświetla pojedynczy znak tekstowy typu char na aktualnej pozycji kursora.
+ * @param    c  
+ * Znak w standardzie ASCII przeznaczony do wyświetlenia.
+ * @side effects:
+ * - Wywołuje wewnętrzną procedurę zapisu danych z rzutowaniem typu char na uint8_t.
+ */
 void lcdWriteChar(char c){ 
-    lcdData((uint8_t)c); // wyślij znak do LCD      
+    lcdData((uint8_t)c);   
 }
 
+/*!
+ * @brief    Wyświetla ciąg znaków (łańcuch tekstowy zakończony znakiem NULL) na ekranie LCD.
+ * @param    text  
+ * Wskaźnik typu const char na pierwszy znak ciągu tekstowego.
+ * @side effects:
+ * - Iteruje po pamięci wskaźnika, inkrementując jego adres aż do napotkania wartości zero.
+ * - Blokuje program na czas transmisji wszystkich znaków składowych łańcucha.
+ */
 void lcdPrint(const char *text) { 
-    while (*text) // wyślij kolejne znaki z łańcucha do LCD - zakończ przy napotkaniu znaku null
-        lcdWriteChar(*text++); 
+    if (text != NULL) {
+        const char *ptr = text;
+        while (*ptr != '\0') {
+            lcdWriteChar(*ptr);
+            ptr++;
+        }
+    }
 }
 
+/*!
+ * @brief    Wyświetla dedykowany symbol stopnia w miejscu aktualnego położenia kursora.
+ * @side effects:
+ * - Wywołuje lcdWriteChar przekazując zrzutowany na typ char indeks komórki pamięci CGRAM.
+ */
 void lcdWriteDegree(void) { 
-    lcdWriteChar((char)DEGREE_SLOT); // wyświetl symbol stopnia z CGRAM
+    lcdWriteChar((char)DEGREE_SLOT);
 }

@@ -3,91 +3,140 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 
-// UNO: D2 = PD2 = INT0
+volatile uint16_t irOverflowCount = 0U;
+volatile uint16_t irLastTime = 0U;
 
-volatile uint16_t irOverflowCount = 0;
-volatile uint16_t irLastTime = 0;
+volatile uint8_t irState = 0U;
+volatile uint8_t irBitIndex = 0U;
+volatile uint32_t irData = 0U;
 
-volatile uint8_t irState = 0;
-volatile uint8_t irBitIndex = 0;
-volatile uint32_t irData = 0;
+volatile uint32_t irReceivedCode = 0U;
+volatile uint8_t irCodeReady = 0U;
 
-volatile uint32_t irReceivedCode = 0;
-volatile uint8_t irCodeReady = 0;
-
-// -------------------------------------
-// Timer2: preskaler 64
-// 16 MHz / 64 = 250 kHz
-// 1 tick = 4 us
-// overflow co 256 * 4 us = 1024 us
-// -------------------------------------
+/*!
+ * @brief    Inicjalizuje moduł sprzętowy Timer 2 do zliczania czasu impulsów pilota IR.
+ * @side effects:
+ * - Zeruje rejestry konfiguracyjne TCCR2A, TCCR2B oraz licznik TCNT2.
+ * - Aktywuje przerwanie od przepełnienia Timera 2 poprzez ustawienie bitu TOIE2 w TIMSK2.
+ * - Uruchamia licznik z preskalerem 64, co ustawia taktowanie modułu na 250 kHz (1 takt = 4 us).
+ */
 static void irTimerInit(void) {
-    TCCR2A = 0;
-    TCCR2B = 0;
-    TCNT2 = 0;
+    TCCR2A = 0U;
+    TCCR2B = 0U;
+    TCNT2 = 0U;
 
-    TIMSK2 = (1 << TOIE2);
-    TCCR2B = (1 << CS22);   // preskaler 64
+    TIMSK2 = (uint8_t)(1U << TOIE2);
+    TCCR2B = (uint8_t)(1U << CS22);
 }
 
-// -------------------------------------
-// INT0 na dowolne zbocze
-// -------------------------------------
+/*!
+ * @brief    Konfiguruje zewnętrzne przerwanie INT4 (pin PE4) do detekcji zboczy sygnału IR.
+ * @side effects:
+ * - Konfiguruje pin PE4 jako wejście i aktywuje jego wewnętrzny rezystor podciągający (pull-up).
+ * - Modyfikuje rejestr EICRB, ustawiając wyzwalanie INT4 na dowolną zmianę stanu logicznego.
+ * - Czyści flagę zaległego przerwania INTF4 i aktywuje maskę przerwania INT4 w rejestrze EIMSK.
+ */
 static void irInterruptInit(void) {
-    DDRE &= ~(1 << PE4);    // D2 na Mega = PE4 = wejscie
-    PORTE |= (1 << PE4);    // pull-up
+    DDRE &= (uint8_t)(~((uint8_t)(1U << PE4)));
+    PORTE |= (uint8_t)(1U << PE4);    
 
-    EICRB |= (1 << ISC40);  // any logical change on INT4
-    EICRB &= ~(1 << ISC41);
+    EICRB |= (uint8_t)(1U << ISC40);
+    EICRB &= (uint8_t)(~((uint8_t)(1U << ISC41)));
 
-    EIFR |= (1 << INTF4);   // wyczysc flage
-    EIMSK |= (1 << INT4);   // wlacz INT4
+    EIFR |= (uint8_t)(1U << INTF4); 
+    EIMSK |= (uint8_t)(1U << INT4);
 }
 
+/*!
+ * @brief    Przelicza liczbę taktów Timera 2 (rozdzielczość 4 us) na mikrosekundy.
+ * @param    ticks  
+ * Liczba zaliczonych taktów licznika (uint16_t).
+ * @returns  Czas wyrażony w mikrosekundach (uint16_t).
+ * @side effects:
+ * -Brak.
+ */
 static uint16_t ticksToUs(uint16_t ticks) {
-    return ticks * 4;
+    return (uint16_t)(ticks * (uint16_t)4U);
 }
 
+/*!
+ * @brief    Dokonuje pełnej inicjalizacji programowych zmiennych stanu oraz sprzętu do obsługi IR.
+ * @side effects:
+ * - Zeruje globalne zmienne i flagi automatu stanów odbiornika NEC.
+ * - Wywołuje irTimerInit() oraz irInterruptInit(), modyfikując rejestry peryferiów AVR.
+ */
 void irInit(void) {
-    irOverflowCount = 0;
-    irLastTime = 0;
-    irState = 0;
-    irBitIndex = 0;
-    irData = 0;
-    irReceivedCode = 0;
-    irCodeReady = 0;
+    irOverflowCount = 0U;
+    irLastTime = 0U;
+    irState = 0U;
+    irBitIndex = 0U;
+    irData = 0U;
+    irReceivedCode = 0U;
+    irCodeReady = 0U;
 
     irTimerInit();
     irInterruptInit();
 }
 
+/*!
+ * @brief    Sprawdza, czy w buforze znajduje się nowo odebrany i nieprzeczytany kod pilota.
+ * @returns  Wartość 1U jeśli kod jest gotowy do pobrania, 0U w przeciwnym wypadku.
+ * @side effects:
+ * - Odczytuje stan globalnej zmiennej irCodeReady.
+ */
 uint8_t irHasCode(void) {
     return irCodeReady;
 }
 
+/*!
+ * @brief    Pobiera odebrany kod pilota i resetuje flagę gotowości.
+ * @returns  32-bitowy kod odebranej ramki protokołu NEC (uint32_t).
+ * @side effects:
+ * - Blokuje globalne przerwania (instrukcja cli) na czas odczytu zmiennej w celu zachowania atomowości.
+ * - Przywraca globalne przerwania (instrukcja sei) przed wyjściem z procedury.
+ * - Zeruje flagę gotowości nowej ramki irCodeReady.
+ */
 uint32_t irGetCode(void) {
     uint32_t code;
 
     cli();
     code = irReceivedCode;
-    irCodeReady = 0;
+    irCodeReady = 0U;
     sei();
 
     return code;
 }
 
+/*!
+ * @brief    Procedura obsługi przerwania (ISR) od przepełnienia modułu Timer 2.
+ * @side effects:
+ * - Inkrementuje globalny licznik programowy irOverflowCount, rozszerzając zakres pomiarowy timera.
+ */
 ISR(TIMER2_OVF_vect) {
     irOverflowCount++;
 }
 
+/*!
+ * @brief    Procedura obsługi przerwania (ISR) zewnętrznego INT4 reagująca na zmiany stanu pinu IR.
+ * @side effects:
+ * - Odczytuje rejestr PINE oraz rejestr licznika TCNT2.
+ * - Realizuje niskopoziomową maszynę stanów dekodera protokołu NEC w oparciu o pomiary czasu deltaUs.
+ * - Modyfikuje zmienne stanu automatu, indeksy bitów oraz tymczasowy rejestr przesuwany danych.
+ * - Po odebraniu pełnych 32 bitów aktualizuje rejestr irReceivedCode i podnosi flagę irCodeReady.
+ */
 ISR(INT4_vect) {
-    uint16_t now = ((uint16_t)irOverflowCount << 8) | TCNT2;
-    uint16_t deltaTicks = now - irLastTime;
+    uint16_t now = (uint16_t)(((uint16_t)irOverflowCount << 8U) | (uint16_t)TCNT2);
+    uint16_t deltaTicks = (uint16_t)(now - irLastTime);
     irLastTime = now;
 
     uint16_t deltaUs = ticksToUs(deltaTicks);
 
-    uint8_t pinState = (PINE & (1 << PE4)) ? 1 : 0;
+    uint8_t pinState;
+    if ((PINE & (uint8_t)(1U << PE4)) != 0U) {
+        pinState = 1U;
+    } else {
+        pinState = 0U;
+    }
 
     // Automat NEC:
     // 0 - czekamy na leader LOW ~9 ms
@@ -96,66 +145,61 @@ ISR(INT4_vect) {
     // 3 - czekamy na HIGH bitu -> 0/1
 
     switch (irState) {
-        case 0:
-            // zakonczyl sie leader LOW, linia przeszla na HIGH
-            if (pinState == 1 && deltaUs > 8000 && deltaUs < 10000) {
-                irState = 1;
-                irBitIndex = 0;
-                irData = 0;
+        case 0U:
+            if ((pinState == 1U) && (deltaUs > 8000U) && (deltaUs < 10000U)) {
+                irState = 1U;
+                irBitIndex = 0U;
+                irData = 0U;
             } else {
-                irState = 0;
+                irState = 0U;
             }
             break;
 
-        case 1:
-            // zakonczyl sie leader HIGH, linia przeszla na LOW
-            if (pinState == 0 && deltaUs > 3500 && deltaUs < 5500) {
-                irState = 2;
+        case 1U:
+            if ((pinState == 0U) && (deltaUs > 3500U) && (deltaUs < 5500U)) {
+                irState = 2U;
             } else {
-                irState = 0;
+                irState = 0U;
             }
             break;
 
-        case 2:
-            // zakonczyl sie LOW pojedynczego bitu (~560 us), linia idzie na HIGH
-            if (pinState == 1 && deltaUs > 300 && deltaUs < 900) {
-                irState = 3;
+        case 2U:
+            if ((pinState == 1U) && (deltaUs > 300U) && (deltaUs < 900U)) {
+                irState = 3U;
             } else {
-                irState = 0;
+                irState = 0U;
             }
             break;
 
-        case 3:
-            // zakonczyl sie HIGH bitu, linia idzie na LOW
-            if (pinState == 0) {
-                irData <<= 1;
+        case 3U:
+            if (pinState == 0U) {
+                irData <<= 1U;
 
-                if (deltaUs > 1000 && deltaUs < 2000) {
-                    // bit 1
-                    irData |= 1;
-                } else if (deltaUs > 300 && deltaUs < 900) {
-                    // bit 0
+                if ((deltaUs > 1000U) && (deltaUs < 2000U)) {
+                    irData |= 1UL;
+                } else if ((deltaUs > 300U) && (deltaUs < 900U)) {
+                    
                 } else {
-                    irState = 0;
+                    irState = 0U;
                     break;
                 }
 
                 irBitIndex++;
 
-                if (irBitIndex >= 32) {
+                if (irBitIndex >= 32U) {
                     irReceivedCode = irData;
-                    irCodeReady = 1;
-                    irState = 0;
+                    irCodeReady = 1U;
+                    irState = 0U;
                 } else {
-                    irState = 2;
+                    irState = 2U;
                 }
             } else {
-                irState = 0;
+                irState = 0U;
             }
             break;
 
         default:
-            irState = 0;
+            irState = 0U;
             break;
     }
 }
