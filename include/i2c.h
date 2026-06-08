@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define I2C_BIT_RATE  72U  // 16 MHz / (16 + 2*72*1) ≈ 100 kHz - standardowa prędkość I2C
-#define I2C_OK               (0U)
+#define I2C_OK       (0U)
 #define I2C_ERROR    (1U)
 
 void i2cInit(void);

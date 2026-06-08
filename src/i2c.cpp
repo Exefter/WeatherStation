@@ -65,6 +65,13 @@ uint8_t i2cWrite(uint8_t data) {
         }
     }
 
+    if (status == I2C_OK) {
+        uint8_t twsrStatus = (uint8_t)(TWSR & 0xF8U);
+        if (twsrStatus != 0x18U && twsrStatus != 0x28U && twsrStatus != 0x40U) {
+            status = I2C_ERROR;
+        }
+    }
+
     return status;
 }
 
