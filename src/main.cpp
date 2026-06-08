@@ -23,8 +23,8 @@ int main(void) {
     uint8_t humidity = 0U;
     uint8_t temperature = 0U;
     uint8_t temperatureDecimal = 0U;
-    RTC_Time time;
-    uint8_t tStatus;
+    RTC_Time_Date time;
+    uint8_t tStatus = RTC_ERROR;
     uint8_t currentScreen = SCREEN_WEATHER;
 
     uint32_t irCode = 0UL;
@@ -68,9 +68,6 @@ int main(void) {
                 } else {
                     currentScreen = SCREEN_WEATHER;
                 }
-            }
-            else {
-
             }
         }
 

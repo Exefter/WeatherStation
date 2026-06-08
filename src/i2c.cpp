@@ -1,8 +1,6 @@
 #include "i2c.h"
 #include <avr/io.h>
 
-#define I2C_BIT_RATE  72U
-
 /*!
  * @brief    Inicjalizuje moduł sprzętowy TWI (I2C) mikrokontrolera do pracy w trybie Master.
  * @side effects:

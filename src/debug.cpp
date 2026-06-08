@@ -40,12 +40,12 @@ static void lcdPrintNumber(uint8_t value) {
 /*!
  * @brief    Zwraca tekstowy opis błędu na podstawie kodu statusu czujnika DHT11.
  * @param    status  
- * Kod statusu (int).
+ * Kod statusu (uint8_t).
  * @returns  Wskaźnik na ciąg znaków char zawierający opis błędu.
  * @side effects:
  * -Brak.
  */
-static const char *statusText(int status) {
+static const char *statusText(uint8_t status) {
     const char *resultText;
     if (status == DHT_TIMEOUT_ERROR) {
         resultText = "Timeout";
@@ -125,7 +125,7 @@ static void lcdPrint2Digits(uint8_t value) {
  * @side effects:
  * - Wywołuje czyszczenie ekranu oraz modyfikuje pozycję kursora na wyświetlaczu.
  */
-void printTimeToLcd(uint8_t status, const RTC_Time *time) {
+void printTimeToLcd(uint8_t status, const RTC_Time_Date *time) {
     if (time != NULL && status == RTC_OK) {
         lcdClear();
         lcdSetCursor(0U, 0U);

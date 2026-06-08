@@ -119,8 +119,8 @@ static bool waitWhileState(bool state, uint16_t timeoutTicks, uint16_t *ticks) {
  * - Wykorzystuje Timer 1 do dokładnego pomiaru szerokości impulsów logicznych (funkcja waitWhileState).
  * - Blokuje procesor na czas trwania pełnej ramki danych czujnika (ok. 4-6 milisekund).
  */
-int8_t readDHT11Raw(uint8_t *humidity, uint8_t *temperature, uint8_t *temperatureDecimal) {
-    int8_t statusResult = DHT_OK;
+uint8_t readDHT11Raw(uint8_t *humidity, uint8_t *temperature, uint8_t *temperatureDecimal) {
+    uint8_t statusResult = DHT_OK;
 
     if ((humidity == NULL) || (temperature == NULL) || (temperatureDecimal == NULL)) {
         statusResult = DHT_INVALID_ARGUMENT;

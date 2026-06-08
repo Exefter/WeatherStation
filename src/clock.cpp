@@ -21,13 +21,13 @@ static uint8_t bcdToDec(uint8_t val) {
 /*!
  * @brief    Odczytuje aktualny czas (godziny, minuty, sekundy) z zewnętrznego układu RTC.
  * @param    time
- * Wskaźnik do struktury RTC_Time, do której zostaną zapisane odczytane dane.
+ * Wskaźnik do struktury RTC_Time_Date, do której zostaną zapisane odczytane dane.
  * @side effects:
  * - Generuje sygnały START i STOP na magistrali I2C (modyfikacja rejestrów sprzętowych TWI).
  * - Blokuje wykonanie programu (pętle busy-wait wewnątrz funkcji i2c).
  * - Nadpisuje pola struktury wskazywanej przez parametr 'time'.
  */
-uint8_t rtcReadTime(RTC_Time *time) {
+uint8_t rtcReadTime(RTC_Time_Date *time) {
     uint8_t status = RTC_ERROR;
     if (time != NULL) {
         i2cStart();
