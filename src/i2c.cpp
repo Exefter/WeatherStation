@@ -61,10 +61,6 @@ uint8_t i2cWrite(uint8_t data) {
         timeout--;
         if(timeout == (uint16_t)0U) {
             status = I2C_ERROR;
-
-            TWCR = (uint8_t)(0U); 
-            TWCR = (uint8_t)(1U << TWEN);
-            
             break;
         }
     }

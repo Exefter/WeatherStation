@@ -54,6 +54,8 @@ uint8_t rtcReadTime(RTC_Time_Date *time) {
             time->day     = bcdToDec(rawDay); 
             time->month   = bcdToDec((uint8_t)(rawMonth & 0x1FU));
             time->year   = bcdToDec(rawYear);
+        } else {
+            i2cStop();
         }
     }
     return status;
