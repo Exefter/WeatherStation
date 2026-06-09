@@ -1,8 +1,8 @@
 #include "customDelay.h"
 
 /*!
- * @brief    Generuje blokujące opóźnienie programowe wyrażone w milisekundach.
- * @param    ms  
+ * @brief Generuje blokujące opóźnienie programowe wyrażone w milisekundach.
+ * @param ms
  * Liczba milisekund, o jaką ma zostać opóźnione wykonanie programu.
  * @side effects:
  * - Rekonfiguruje i przejmuje kontrolę nad Timerem 1 (zeruje rejestry TCCR1A, TCCR1B, TCNT1).
@@ -32,8 +32,8 @@ void customDelay(uint16_t ms) {
 }
 
 /*!
- * @brief    Generuje blokujące opóźnienie programowe wyrażone w mikrosekundach.
- * @param    us  
+ * @brief Generuje blokujące opóźnienie programowe wyrażone w mikrosekundach.
+ * @param us  
  * Liczba mikrosekund, o jaką ma zostać opóźnione wykonanie programu.
  * @side effects:
  * - Rekonfiguruje i przejmuje kontrolę nad Timerem 1 (zeruje rejestry TCCR1A, TCCR1B, TCNT1).

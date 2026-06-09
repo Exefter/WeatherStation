@@ -11,8 +11,8 @@
 #define SCREEN_CLOCK   1U
 
 /*!
- * @brief    Główny punkt wejściowy programu stacji pogodowej (funkcja main).
- * @returns  Kod zakończenia programu (int), domyślnie 0.
+ * @brief Główny punkt wejściowy programu stacji pogodowej (funkcja main).
+ * @returns Kod zakończenia programu (int), domyślnie 0.
  * @side effects:
  * - Konfiguruje globalne peryferia sprzętowe: LCD oraz dekoder podczerwieni IR.
  * - Odblokowuje globalną flagę obsługi przerwań mikrokontrolera (instrukcja sei).

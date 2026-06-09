@@ -62,13 +62,13 @@ static const char *statusText(uint8_t status) {
 
 /*!
  * @brief    Prezentuje odczytane dane meteorologiczne (temperatura i wilgotność) na ekranie LCD.
- * @param    status              
+ * @param    status
  * Status ostatniego odczytu z DHT11.
- * @param    humidity            
+ * @param    humidity
  * Wartość wilgotności powietrza.
- * @param    temperature         
+ * @param    temperature
  * Całkowita wartość temperatury.
- * @param    temperatureDecimal  
+ * @param    temperatureDecimal
  * Dziesiętna wartość temperatury.
  * @side effects:
  * - Czyści ekran LCD (lcdClear) i wielokrotnie przestawia kursor oraz wysyła ciągi tekstowe.
@@ -105,7 +105,7 @@ void printWeatherDataToLcd(
 
 /*!
  * @brief    Wyświetla liczbę dwucyfrową na LCD, uzupełniając ją w razie potrzeby o wiodące zero.
- * @param    value  
+ * @param    value
  * Wartość do wyświetlenia (uint8_t).
  * @side effects:
  * - Wysyła dwa znaki ASCII bezpośrednio do pamięci DDRAM sterownika LCD.

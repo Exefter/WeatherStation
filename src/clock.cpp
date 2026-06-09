@@ -7,8 +7,8 @@
 #define DS3231_ADDRESS_READ  0xD1U // Adres 0x68 przesunięty w lewo o 1 bit (bit odczytu = 1)
 
 /*! 
- * @brief    Konwertuje liczbę zapisaną w formacie BCD (Binary-Coded Decimal) na format dziesiętny.
- * @param    val
+ * @brief Konwertuje liczbę zapisaną w formacie BCD (Binary-Coded Decimal) na format dziesiętny.
+ * @param val
  * Wartość wejściowa w formacie BCD (uint8_t).
  * @returns  Przekonwertowana wartość w formacie dziesiętnym (uint8_t).
  * @side effects:
@@ -19,8 +19,8 @@ static uint8_t bcdToDec(uint8_t val) {
 }
 
 /*!
- * @brief    Odczytuje aktualny czas (godziny, minuty, sekundy) z zewnętrznego układu RTC.
- * @param    time
+ * @brief Odczytuje aktualny czas (godziny, minuty, sekundy) z zewnętrznego układu RTC.
+ * @param time
  * Wskaźnik do struktury RTC_Time_Date, do której zostaną zapisane odczytane dane.
  * @returns  Kod błędu lub sukcesu (np. RTC_OK, RTC_ERROR).
  * @side effects:

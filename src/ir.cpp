@@ -14,7 +14,7 @@ volatile uint32_t irReceivedCode = 0U;
 volatile uint8_t irCodeReady = 0U;
 
 /*!
- * @brief    Inicjalizuje moduł sprzętowy Timer 2 do zliczania czasu impulsów pilota IR.
+ * @brief Inicjalizuje moduł sprzętowy Timer 2 do zliczania czasu impulsów pilota IR.
  * @side effects:
  * - Zeruje rejestry konfiguracyjne TCCR2A, TCCR2B oraz licznik TCNT2.
  * - Aktywuje przerwanie od przepełnienia Timera 2 poprzez ustawienie bitu TOIE2 w TIMSK2.
@@ -30,7 +30,7 @@ static void irTimerInit(void) {
 }
 
 /*!
- * @brief    Konfiguruje zewnętrzne przerwanie INT4 (pin PE4) do detekcji zboczy sygnału IR.
+ * @brief Konfiguruje zewnętrzne przerwanie INT4 (pin PE4) do detekcji zboczy sygnału IR.
  * @side effects:
  * - Konfiguruje pin PE4 jako wejście i aktywuje jego wewnętrzny rezystor podciągający (pull-up).
  * - Modyfikuje rejestr EICRB, ustawiając wyzwalanie INT4 na dowolną zmianę stanu logicznego.
@@ -48,8 +48,8 @@ static void irInterruptInit(void) {
 }
 
 /*!
- * @brief    Przelicza liczbę taktów Timera 2 (rozdzielczość 4 us) na mikrosekundy.
- * @param    ticks  
+ * @brief Przelicza liczbę taktów Timera 2 (rozdzielczość 4 us) na mikrosekundy.
+ * @param ticks
  * Liczba zaliczonych taktów licznika (uint16_t).
  * @returns  Czas wyrażony w mikrosekundach (uint16_t).
  * @side effects:
@@ -60,7 +60,7 @@ static uint16_t ticksToUs(uint16_t ticks) {
 }
 
 /*!
- * @brief    Dokonuje pełnej inicjalizacji programowych zmiennych stanu oraz sprzętu do obsługi IR.
+ * @brief Dokonuje pełnej inicjalizacji programowych zmiennych stanu oraz sprzętu do obsługi IR.
  * @side effects:
  * - Zeruje globalne zmienne i flagi automatu stanów odbiornika NEC.
  * - Wywołuje irTimerInit() oraz irInterruptInit(), modyfikując rejestry peryferiów AVR.
@@ -79,7 +79,7 @@ void irInit(void) {
 }
 
 /*!
- * @brief    Sprawdza, czy w buforze znajduje się nowo odebrany i nieprzeczytany kod pilota.
+ * @brief Sprawdza, czy w buforze znajduje się nowo odebrany i nieprzeczytany kod pilota.
  * @returns  Wartość 1U jeśli kod jest gotowy do pobrania, 0U w przeciwnym wypadku.
  * @side effects:
  * - Odczytuje stan globalnej zmiennej irCodeReady.
@@ -89,8 +89,8 @@ uint8_t irHasCode(void) {
 }
 
 /*!
- * @brief    Pobiera odebrany kod pilota i resetuje flagę gotowości.
- * @returns  32-bitowy kod odebranej ramki protokołu NEC (uint32_t).
+ * @brief Pobiera odebrany kod pilota i resetuje flagę gotowości.
+ * @returns 32-bitowy kod odebranej ramki protokołu NEC (uint32_t).
  * @side effects:
  * - Blokuje globalne przerwania (instrukcja cli) na czas odczytu zmiennej w celu zachowania atomowości.
  * - Przywraca globalne przerwania (instrukcja sei) przed wyjściem z procedury.
@@ -108,7 +108,7 @@ uint32_t irGetCode(void) {
 }
 
 /*!
- * @brief    Procedura obsługi przerwania (ISR) od przepełnienia modułu Timer 2.
+ * @brief Procedura obsługi przerwania (ISR) od przepełnienia modułu Timer 2.
  * @side effects:
  * - Inkrementuje globalny licznik programowy irOverflowCount, rozszerzając zakres pomiarowy timera.
  */
@@ -117,7 +117,7 @@ ISR(TIMER2_OVF_vect) {
 }
 
 /*!
- * @brief    Procedura obsługi przerwania (ISR) zewnętrznego INT4 reagująca na zmiany stanu pinu IR.
+ * @brief Procedura obsługi przerwania (ISR) zewnętrznego INT4 reagująca na zmiany stanu pinu IR.
  * @side effects:
  * - Odczytuje rejestr PINE oraz rejestr licznika TCNT2.
  * - Realizuje niskopoziomową maszynę stanów dekodera protokołu NEC w oparciu o pomiary czasu deltaUs.

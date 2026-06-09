@@ -28,8 +28,8 @@ static const uint8_t ROW_OFFSET[4] = {
 };
 
 /*!
- * @brief    Zapisuje pojedynczy bajt danych bezpośrednio do ekspandera.
- * @param    data  
+ * @brief Zapisuje pojedynczy bajt danych bezpośrednio do ekspandera.
+ * @param data
  * Bajt danych do wysłania na porty IO ekspandera.
  * @side effects:
  * - Inicjuje i kończy sesję transmisji na magistrali I2C.
@@ -43,8 +43,8 @@ static void backpackWrite(uint8_t data) {
 }
 
 /*!
- * @brief    Generuje wymagany impuls strobujący na linii ENABLE (EN) sterownika HD44780.
- * @param    data  
+ * @brief Generuje wymagany impuls strobujący na linii ENABLE (EN) sterownika HD44780.
+ * @param data
  * Bajt danych, z którym ma zostać połączony impuls sterujący.
  * @side effects:
  * - Dwukrotnie wywołuje funkcję backpackWrite, zmieniając stan pinu EN ekspandera.
@@ -58,10 +58,10 @@ static void pulseEnable(uint8_t data) {
 }
 
 /*!
- * @brief    Wysyła starszą połowę bajtu (nibble) wraz z flagą wyboru rejestru RS.
- * @param    data  
+ * @brief Wysyła starszą połowę bajtu (nibble) wraz z flagą wyboru rejestru RS.
+ * @param data
  * Bajt danych, z którego zostanie wycięte 4 starsze bity (D7-D4).
- * @param    mode  
+ * @param mode
  * Tryb pracy kontrolera: wartość RS (dane) lub 0U (instrukcja).
  * @side effects:
  * - Wywołuje procedurę pulseEnable, co skutkuje wysłaniem danych przez magistralę I2C.
@@ -71,10 +71,10 @@ static void sendNibble(uint8_t data, uint8_t mode) {
 }
 
 /*!
- * @brief    Dzieli bajt danych na dwie części 4-bitowe i wysyła je sekwencyjnie do wyświetlacza.
- * @param    data  
+ * @brief Dzieli bajt danych na dwie części 4-bitowe i wysyła je sekwencyjnie do wyświetlacza.
+ * @param data
  * Pełny bajt danych lub komendy przeznaczony dla sterownika LCD.
- * @param    mode 
+ * @param mode
  * Tryb pracy kontrolera: wartość RS (dane) lub 0U (instrukcja).
  * @side effects:
  * - Generuje serię dwóch pełnych cykli strobujących na magistrali komunikacyjnej.
@@ -85,8 +85,8 @@ static void sendByte(uint8_t data, uint8_t mode) {
 }
 
 /*!
- * @brief    Wysyła komendę sterującą do rejestru instrukcji wyświetlacza LCD.
- * @param    cmd  
+ * @brief Wysyła komendę sterującą do rejestru instrukcji wyświetlacza LCD.
+ * @param cmd
  * Bajt zawierający kod rozkazu dla sterownika HD44780.
  * @side effects:
  * - Modyfikuje rejestr wewnętrzny oraz stan pracy kontrolera wyświetlacza (RS = 0U).
@@ -96,8 +96,8 @@ static void lcdCommand(uint8_t cmd) {
 } 
 
 /*!
- * @brief    Wysyła pojedynczy znak danych do pamięci DDRAM/CGRAM wyświetlacza LCD.
- * @param    data  
+ * @brief Wysyła pojedynczy znak danych do pamięci DDRAM/CGRAM wyświetlacza LCD.
+ * @param data
  * Kod ASCII znaku lub adres bitmapy do wyświetlenia.
  * @side effects:
  * - Zapisuje bajt danych do aktualnej komórki pamięci RAM sterownika LCD (RS = RS).
@@ -107,10 +107,10 @@ static void lcdData(uint8_t data) {
 } 
 
 /*!
- * @brief    Tworzy i zapisuje niestandardowy znak użytkownika w pamięci generowania znaków CGRAM.
- * @param    slot    
+ * @brief Tworzy i zapisuje niestandardowy znak użytkownika w pamięci generowania znaków CGRAM.
+ * @param slot
  * Numer indeksu komórki pamięci CGRAM (zakres 0 do 7).
- * @param    bitmap  
+ * @param bitmap
  * Tablica 8 bajtów definiująca wygląd kolejnych wierszy znaku graficznego.
  * @side effects:
  * - Przestawia tymczasowo licznik adresowy wyświetlacza na obszar pamięci CGRAM.
@@ -125,8 +125,8 @@ static void createChar(uint8_t slot, const uint8_t bitmap[8]) {
 }
 
 /*!
- * @brief    Przeprowadza pełną procedurę inicjalizacji sprzętowej wyświetlacza LCD w trybie 4-bitowym.
- * @param    address  
+ * @brief Przeprowadza pełną procedurę inicjalizacji sprzętowej wyświetlacza LCD w trybie 4-bitowym.
+ * @param address
  * Adres sprzętowy I2C ekspandera (np. 0x27).
  * @side effects:
  * - Inicjalizuje peryferium i2cInit oraz zapisuje globalny adres urządzenia w 'lcdAddress'.
@@ -163,7 +163,7 @@ void lcdInit(uint8_t address) {
 }
 
 /*!
- * @brief    Czyści zawartość pamięci DDRAM wyświetlacza i przywraca kursor na pozycję początkową (0,0).
+ * @brief Czyści zawartość pamięci DDRAM wyświetlacza i przywraca kursor na pozycję początkową (0,0).
  * @side effects:
  * - Wysyła komendę czyszczenia ekranu, co usuwa wszystkie wyświetlane znaki.
  * - Blokuje działanie programu na około 2 milisekundy (wymóg czasowy sterownika HD44780).
@@ -174,10 +174,10 @@ void lcdClear(void) {
 }
 
 /*!
- * @brief    Ustawia kursor tekstowy wyświetlacza na zadanych współrzędnych kolumny i wiersza.
- * @param    col  
+ * @brief Ustawia kursor tekstowy wyświetlacza na zadanych współrzędnych kolumny i wiersza.
+ * @param col
  * Numer kolumny (indeksowany od 0U).
- * @param    row  
+ * @param row
  * Numer wiersza (indeksowany od 0U do 3U).
  * @side effects:
  * - Wyznacza adres sprzętowy DDRAM na podstawie tablicy ROW_OFFSET z zabezpieczeniem modulo przed przekroczeniem indeksu.
@@ -188,8 +188,8 @@ void lcdSetCursor(uint8_t col, uint8_t row) {
 }
 
 /*!
- * @brief    Wyświetla pojedynczy znak tekstowy typu char na aktualnej pozycji kursora.
- * @param    c  
+ * @brief Wyświetla pojedynczy znak tekstowy typu char na aktualnej pozycji kursora.
+ * @param c
  * Znak w standardzie ASCII przeznaczony do wyświetlenia.
  * @side effects:
  * - Wywołuje wewnętrzną procedurę zapisu danych z rzutowaniem typu char na uint8_t.
@@ -199,8 +199,8 @@ void lcdWriteChar(char c){
 }
 
 /*!
- * @brief    Wyświetla ciąg znaków (łańcuch tekstowy zakończony znakiem NULL) na ekranie LCD.
- * @param    text  
+ * @brief Wyświetla ciąg znaków (łańcuch tekstowy zakończony znakiem NULL) na ekranie LCD.
+ * @param  text
  * Wskaźnik typu const char na pierwszy znak ciągu tekstowego.
  * @side effects:
  * - Iteruje po pamięci wskaźnika, inkrementując jego adres aż do napotkania wartości zero.
@@ -217,7 +217,7 @@ void lcdPrint(const char *text) {
 }
 
 /*!
- * @brief    Wyświetla dedykowany symbol stopnia w miejscu aktualnego położenia kursora.
+ * @brief Wyświetla dedykowany symbol stopnia w miejscu aktualnego położenia kursora.
  * @side effects:
  * - Wywołuje lcdWriteChar przekazując zrzutowany na typ char indeks komórki pamięci CGRAM.
  */

@@ -8,7 +8,6 @@
 #define DHT_PIN  PING
 #define DHT_BIT  PG5
 
-
 volatile uint8_t gHumidity    = 0U;
 volatile uint8_t gTemperature = 0U;
 volatile uint8_t gTemperatureDecimal = 0U;
@@ -29,7 +28,7 @@ static bool dhtPinRead(void) {
 }
 
 /*!
- * @brief    Konfiguruje pin dedykowany dla DHT11 jako wyjście.
+ * @brief Konfiguruje pin dedykowany dla DHT11 jako wyjście.
  * @side effects:
  * - Modyfikuje rejestr kierunku DDRG, ustawiając bit PG5.
  */
@@ -38,7 +37,7 @@ static void dhtPinOutput(void) {
 }
 
 /*!
- * @brief    Konfiguruje pin dedykowany dla DHT11 jako wejście (stan wysokiej impedancji).
+ * @brief Konfiguruje pin dedykowany dla DHT11 jako wejście (stan wysokiej impedancji).
  * @side effects:
  * - Modyfikuje rejestr kierunku DDRG, czyszcząc bit PG5.
  */
@@ -47,7 +46,7 @@ static void dhtPinInput(void)  {
 }
 
 /*!
- * @brief    Wysterowuje stan wysoki na pinie wyjściowym czujnika DHT11.
+ * @brief Wysterowuje stan wysoki na pinie wyjściowym czujnika DHT11.
  * @side effects:
  * - Modyfikuje rejestr wyjściowy PORTG, ustawiając bit PG5.
  */
@@ -56,7 +55,7 @@ static void dhtPinHigh(void)   {
 }
 
 /*!
- * @brief    Wysterowuje stan niski na pinie wyjściowym czujnika DHT11.
+ * @brief Wysterowuje stan niski na pinie wyjściowym czujnika DHT11.
  * @side effects:
  * - Modyfikuje rejestr wyjściowy PORTG, czyszcząc bit PG5.
  */
@@ -65,12 +64,12 @@ static void dhtPinLow(void)    {
 }
 
 /*!
- * @brief    Blokuje wykonanie programu tak długo, jak długo pin utrzymuje zadany stan, lub do przekroczenia limitu czasu.
- * @param    state         
+ * @brief Blokuje wykonanie programu tak długo, jak długo pin utrzymuje zadany stan, lub do przekroczenia limitu czasu.
+ * @param state
  * Stan logiczny (true/false), dla którego pętla ma kontynuować oczekiwanie.
- * @param    timeoutTicks  
+ * @param timeoutTicks
  * Maksymalna liczba taktów licznika (rozdzielczość 0.5 us), po której nastąpi przerwanie.
- * @param    ticks         
+ * @param ticks
  * Wskaźnik na zmienną, do której zostanie zapisany końcowy stan licznika TCNT1 (opcjonalny).
  * @returns  true jeśli zmiana stanu nastąpiła przed limitem czasu, false w przypadku przekroczenia timeoutu.
  * @side effects:
@@ -106,12 +105,12 @@ static bool waitWhileState(bool state, uint16_t timeoutTicks, uint16_t *ticks) {
 }
 
 /*!
- * @brief    Realizuje niskopoziomowy protokół transmisji One-Wire w celu odczytania 40 bitów surowych danych z czujnika DHT11.
- * @param    humidity            
+ * @brief Realizuje niskopoziomowy protokół transmisji One-Wire w celu odczytania 40 bitów surowych danych z czujnika DHT11.
+ * @param humidity
  * Wskaźnik na zmienną, gdzie zostanie zapisana całkowita wartość wilgotności.
- * @param    temperature         
+ * @param temperature
  * Wskaźnik na zmienną, gdzie zostanie zapisana całkowita wartość temperatury.
- * @param    temperatureDecimal  
+ * @param temperatureDecimal
  * Wskaźnik na zmienną, gdzie zostanie zapisana dziesiętna wartość temperatury.
  * @returns  Kod błędu lub sukcesu (np. DHT_OK, DHT_TIMEOUT_ERROR, DHT_CHECKSUM_ERROR, DHT_INVALID_ARGUMENT).
  * @side effects:
