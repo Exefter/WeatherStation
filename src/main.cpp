@@ -68,6 +68,8 @@ int main(void) {
                 } else {
                     currentScreen = SCREEN_WEATHER;
                 }
+            } else {
+                
             }
         }
 

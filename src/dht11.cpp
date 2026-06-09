@@ -113,7 +113,7 @@ static bool waitWhileState(bool state, uint16_t timeoutTicks, uint16_t *ticks) {
  * Wskaźnik na zmienną, gdzie zostanie zapisana całkowita wartość temperatury.
  * @param    temperatureDecimal  
  * Wskaźnik na zmienną, gdzie zostanie zapisana dziesiętna wartość temperatury.
- * @returns  Kod błędu lub sukcesu typu int (np. DHT_OK, DHT_TIMEOUT_ERROR, DHT_CHECKSUM_ERROR, DHT_INVALID_ARGUMENT).
+ * @returns  Kod błędu lub sukcesu (np. DHT_OK, DHT_TIMEOUT_ERROR, DHT_CHECKSUM_ERROR, DHT_INVALID_ARGUMENT).
  * @side effects:
  * - Aktywnie przejmuje kontrolę nad pinem GPIO, wymuszając sekwencję Start (stan niski przez 20 ms).
  * - Wykorzystuje Timer 1 do dokładnego pomiaru szerokości impulsów logicznych (funkcja waitWhileState).

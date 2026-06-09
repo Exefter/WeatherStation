@@ -120,10 +120,14 @@ static void lcdPrint2Digits(uint8_t value) {
 
 /*!
  * @brief    Wizualizuje aktualny czas z modułu RTC na wyświetlaczu LCD w formacie HH:MM:SS.
+ * @param    status
+ * Status ostatniego odczytu z modułu RTC
  * @param    time  
- * Wskaźnik na stałą strukturę RTC_Time zawierającą czas.
+ * Wskaźnik na stałą strukturę RTC_Time_Date zawierającą czas.
  * @side effects:
- * - Wywołuje czyszczenie ekranu oraz modyfikuje pozycję kursora na wyświetlaczu.
+ * - Każdorazowo czyści ekran LCD (lcdClear) na początku wykonania.
+ * - Modyfikuje pozycję kursora (lcdSetCursor) w obu wierszach wyświetlacza.
+ * - W przypadku wykrycia błędu (status != RTC_OK lub wskaźnik NULL) wypisuje na ekranie komunikat "RTC error".
  */
 void printTimeToLcd(uint8_t status, const RTC_Time_Date *time) {
     if (time != NULL && status == RTC_OK) {
