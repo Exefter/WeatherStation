@@ -9,5 +9,6 @@ void lcdSetCursor(uint8_t col, uint8_t row);
 void lcdWriteChar(char c);
 void lcdWriteDegree(void);
 void lcdPrint(const char *text);
+void lcdDrawTempBar(uint8_t temperature);
 
 #endif

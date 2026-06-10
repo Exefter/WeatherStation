@@ -90,6 +90,8 @@ void printWeatherDataToLcd(
         lcdWriteDegree();
         lcdPrint("C");
 
+        lcdDrawTempBar(temperature);
+
         lcdSetCursor(0U, 1U);
         lcdPrint("Hum: ");
         lcdPrintNumber(humidity);

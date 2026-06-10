@@ -23,6 +23,28 @@ static const uint8_t DEGREE_BITMAP[8] = {
     0x00U, 0x00U, 0x00U, 0x00U
 };
 
+static const uint8_t BAR_BITMAP_1[8] = {
+    0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x1FU
+};
+static const uint8_t BAR_BITMAP_2[8] = {
+    0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x1FU, 0x1FU
+};
+static const uint8_t BAR_BITMAP_3[8] = {
+    0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x1FU, 0x1FU, 0x1FU
+};
+static const uint8_t BAR_BITMAP_4[8] = {
+    0x00U, 0x00U, 0x00U, 0x00U, 0x1FU, 0x1FU, 0x1FU, 0x1FU
+};
+static const uint8_t BAR_BITMAP_5[8] = {
+    0x00U, 0x00U, 0x00U, 0x1FU, 0x1FU, 0x1FU, 0x1FU, 0x1FU
+};
+static const uint8_t BAR_BITMAP_6[8] = {
+    0x00U, 0x00U, 0x1FU, 0x1FU, 0x1FU, 0x1FU, 0x1FU, 0x1FU
+};
+static const uint8_t BAR_BITMAP_7[8] = {
+    0x00U, 0x1FU, 0x1FU, 0x1FU, 0x1FU, 0x1FU, 0x1FU, 0x1FU
+};
+
 static const uint8_t ROW_OFFSET[4] = { 
     0x00U, 0x40U, 0x14U, 0x54U 
 };
@@ -124,6 +146,18 @@ static void createChar(uint8_t slot, const uint8_t bitmap[8]) {
     }
 }
 
+static char tempBarChar(uint8_t row, uint8_t fullBlocks, uint8_t partialRows) {
+    char result;
+    if (row < fullBlocks) {
+        result = (char)0xFFU;
+    } else if ((row == fullBlocks) && (partialRows > 0U)) {
+        result = (char)partialRows;
+    } else {
+        result = ' ';
+    }
+    return result;
+}
+
 /*!
  * @brief Przeprowadza pełną procedurę inicjalizacji sprzętowej wyświetlacza LCD w trybie 4-bitowym.
  * @param address
@@ -157,6 +191,13 @@ void lcdInit(uint8_t address) {
     lcdCommand(0x06U);  // kursor przesuwa się w prawo
 
     createChar(DEGREE_SLOT, DEGREE_BITMAP); // zdefiniuj symbol stopnia w CGRAM
+    createChar(1U, BAR_BITMAP_1);
+    createChar(2U, BAR_BITMAP_2);
+    createChar(3U, BAR_BITMAP_3);
+    createChar(4U, BAR_BITMAP_4);
+    createChar(5U, BAR_BITMAP_5);
+    createChar(6U, BAR_BITMAP_6);
+    createChar(7U, BAR_BITMAP_7);
 
     lcdClear(); 
     lcdCommand(0x0CU);  // włącz wyświetlacz, bez kursora
@@ -223,4 +264,26 @@ void lcdPrint(const char *text) {
  */
 void lcdWriteDegree(void) { 
     lcdWriteChar((char)DEGREE_SLOT);
+}
+
+void lcdDrawTempBar(uint8_t temperature) {
+    uint8_t total = temperature * 32U / 40U;
+    if (total > 32U) { 
+        total = 32U; 
+    }
+
+    uint8_t fullBlocks  = (uint8_t)(total / 8U);
+    uint8_t partialRows = (uint8_t)(total % 8U);
+
+    lcdSetCursor(19U, 3U);
+    lcdWriteChar(tempBarChar(0U, fullBlocks, partialRows));
+
+    lcdSetCursor(19U, 2U);
+    lcdWriteChar(tempBarChar(1U, fullBlocks, partialRows));
+
+    lcdSetCursor(19U, 1U);
+    lcdWriteChar(tempBarChar(2U, fullBlocks, partialRows));
+
+    lcdSetCursor(19U, 0U);
+    lcdWriteChar(tempBarChar(3U, fullBlocks, partialRows));
 }
